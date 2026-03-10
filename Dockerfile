@@ -2,12 +2,18 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install -y \ncurl \nwget \ngnupg \nnodejs \nnpm \nca-certificates
+RUN apt-get update && apt-get install -y \
+curl \
+wget \
+gnupg \
+nodejs \
+npm \
+ca-certificates
 
-# install flowise
+# install Flowise
 RUN npm install -g flowise
 
-# install pinchtab
+# install PinchTab
 RUN wget https://github.com/pinchtab/pinchtab/releases/latest/download/pinchtab-linux-amd64 -O /usr/local/bin/pinchtab
 RUN chmod +x /usr/local/bin/pinchtab
 
