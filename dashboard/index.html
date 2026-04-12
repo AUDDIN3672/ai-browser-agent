@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Bot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-indigo-600">Polymarket Trading Bot</h1>
+            <p class="text-gray-600">Paper Trading Mode - Live Monitoring</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-2">Current Balance</h2>
+                <p id="balance" class="text-3xl font-bold text-green-500">£0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-2">Win Rate</h2>
+                <p id="winRate" class="text-3xl font-bold text-blue-500">0%</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-2">Total Trades</h2>
+                <p id="totalTrades" class="text-3xl font-bold text-gray-700">0</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Trade History</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left">Timestamp</th>
+                            <th class="py-3 px-6 text-left">Market</th>
+                            <th class="py-3 px-6 text-left">Strategy</th>
+                            <th class="py-3 px-6 text-left">Outcome</th>
+                            <th class="py-3 px-6 text-center">Amount</th>
+                            <th class="py-3 px-6 text-center">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradeHistory" class="text-gray-600 text-sm font-light">
+                        <!-- Trades will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // Fetching the JSON data committed by the bot
+                const response = await fetch('../data/trades.json');
+                const data = await response.json();
+
+                document.getElementById('balance').innerText = '£' + data.balance.toFixed(2);
+                document.getElementById('totalTrades').innerText = data.history.length;
+
+                const wins = data.history.filter(t => t.result === 'win').length;
+                const winRate = data.history.length > 0 ? (wins / data.history.length * 100).toFixed(1) : 0;
+                document.getElementById('winRate').innerText = winRate + '%';
+
+                const historyBody = document.getElementById('tradeHistory');
+                historyBody.innerHTML = '';
+
+                [...data.history].reverse().forEach(trade => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-200 hover:bg-gray-100';
+                    row.innerHTML = `
+                        <td class="py-3 px-6 text-left whitespace-nowrap">${new Date(trade.timestamp).toLocaleString()}</td>
+                        <td class="py-3 px-6 text-left">${trade.marketId}</td>
+                        <td class="py-3 px-6 text-left">${trade.strategy}</td>
+                        <td class="py-3 px-6 text-left">${trade.outcome}</td>
+                        <td class="py-3 px-6 text-center">£${trade.amount.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-center">
+                            <span class="${trade.result === 'win' ? 'bg-green-200 text-green-600' : 'bg-red-200 text-red-600'} py-1 px-3 rounded-full text-xs">
+                                ${trade.result.toUpperCase()}
+                            </span>
+                        </td>
+                    `;
+                    historyBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading trade data:', error);
+            }
+        }
+
+        loadData();
+        setInterval(loadData, 60000); // Refresh every minute
+    </script>
+</body>
+</html>
