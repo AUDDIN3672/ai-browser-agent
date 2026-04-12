@@ -1,0 +1,47 @@
+name: Polymarket Trading Bot
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Every 30 minutes
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Ollama
+        run: |
+          curl -L https://ollama.com/download/ollama-linux-amd64 -o ollama
+          chmod +x ollama
+          ./ollama serve &
+          sleep 15
+          ./ollama pull phi3
+
+      - name: Run Bot
+        run: node scripts/main.js
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "Polymarket Bot"
+          git config --global user.email "bot@polymarket.com"
+          git add data/trades.json
+          git commit -m "Update trade data [skip ci]" || echo "No changes to commit"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
